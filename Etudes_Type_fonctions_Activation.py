@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist # type: ignore
 from tensorflow.keras.models import Sequential # type: ignore
@@ -13,7 +14,7 @@ x_train = x_train.astype("float32") / 255.
 x_test = x_test.astype("float32") / 255.
 
 # --- 2. Paramètres généraux ---
-activation_options = ["relu" , "leaky_relu" , "prelu", "elu", "swish"]
+activation_options = ["relu" , "leaky_relu" , "prelu", "elu", "sigmoid", "swish"]
 num_epochs = 50
 batch_size = 128
 
@@ -48,9 +49,13 @@ def create_model(activation_choice):
 
 # --- 4. Entraîner et évaluer chaque modèle ---
 results = {}
+executions_times =[]
 
 for act in activation_options:
     print(f"\n>>> Entraînement avec activation : {act}")
+
+    start = time.time()
+
     model = create_model(act)
     model.compile(optimizer=Adam(),
                   loss='sparse_categorical_crossentropy',
@@ -62,18 +67,36 @@ for act in activation_options:
                         batch_size=batch_size,
                         verbose=0)
 
+    stop = time.time()
+
+    executions_times.append(stop - start)
+
     test_loss, test_acc = model.evaluate(x_test, y_test, verbose=0)
     results[act] = {
         "accuracy": test_acc,
+        "loss": test_loss,
         "history": history.history
     }
     print(f"Test accuracy : {test_acc:.4f}")
 
 # --- 5. Affichage des résultats ---
+print("\nTemps d'exécution pour chaque activation :")
+print(executions_times)
+
 plt.figure()
 for act in activation_options:
     plt.plot(results[act]["history"]["accuracy"], label=act)
 plt.title("Validation Accuracy selon la fonction d'activation")
+plt.xlabel("Epoch")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+plt.figure()
+for act in activation_options:
+    plt.plot(results[act]["history"]["loss"], label=act)
+plt.title("Validation Loss selon la fonction d'activation")
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")
 plt.legend()
